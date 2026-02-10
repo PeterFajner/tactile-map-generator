@@ -1,5 +1,9 @@
+import { useCallback, useRef, useState } from "react";
 import { ErrorModal } from "./components/ErrorModal";
-import { JsonEditor } from "./components/json-editor/JsonEditor";
+import {
+  JsonEditor,
+  type JsonEditorHandle,
+} from "./components/json-editor/JsonEditor";
 import { Header } from "./components/layout/Header";
 import { StepIndicator } from "./components/layout/StepIndicator";
 import { MapPicker } from "./components/map-picker/MapPicker";
@@ -55,11 +59,26 @@ const SelectStep = () => {
 
 const EditStep = () => {
   const setStep = useAppStore((s) => s.setStep);
+  const editorRef = useRef<JsonEditorHandle>(null);
+  const [isDirty, setIsDirty] = useState(false);
+
+  const handleDirtyChange = useCallback((dirty: boolean) => {
+    setIsDirty(dirty);
+  }, []);
+
+  const handleValidate = () => {
+    editorRef.current?.validate();
+  };
+
+  const handlePreview = () => {
+    const valid = editorRef.current?.validate() ?? true;
+    if (valid) setStep("preview");
+  };
 
   return (
     <div className="flex flex-col h-full p-4 gap-4">
       <div className="flex-1 overflow-hidden">
-        <JsonEditor />
+        <JsonEditor ref={editorRef} onDirtyChange={handleDirtyChange} />
       </div>
       <div className="flex items-center gap-3">
         <button
@@ -69,7 +88,14 @@ const EditStep = () => {
           Back
         </button>
         <button
-          onClick={() => setStep("preview")}
+          onClick={handleValidate}
+          disabled={!isDirty}
+          className="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Validate Changes
+        </button>
+        <button
+          onClick={handlePreview}
           className="px-6 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700"
         >
           Preview 3D
