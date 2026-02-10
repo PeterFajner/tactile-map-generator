@@ -1,13 +1,14 @@
 import "leaflet/dist/leaflet.css";
 import { useCallback, useEffect, useRef } from "react";
 import {
-  Circle,
   MapContainer,
+  Rectangle,
   TileLayer,
   useMap,
   useMapEvents,
 } from "react-leaflet";
 import { useAppStore } from "../../store/app-store";
+import { bboxFromCenter } from "../../utils/geo";
 import { LocationSearchBar } from "./LocationSearch";
 import { RadiusControl } from "./RadiusControl";
 
@@ -83,9 +84,19 @@ export const MapPicker = () => {
           {selection && (
             <>
               <FlyTo lat={selection.lat} lng={selection.lng} />
-              <Circle
-                center={[selection.lat, selection.lng]}
-                radius={selection.radius}
+              {/* Display the bounds of our selection */}
+              <Rectangle
+                bounds={(() => {
+                  const b = bboxFromCenter(
+                    selection.lat,
+                    selection.lng,
+                    selection.radius,
+                  );
+                  return [
+                    [b.south, b.west],
+                    [b.north, b.east],
+                  ] as [[number, number], [number, number]];
+                })()}
                 pathOptions={{
                   color: "#2563eb",
                   fillColor: "#3b82f6",

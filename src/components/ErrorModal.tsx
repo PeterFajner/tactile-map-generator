@@ -1,4 +1,4 @@
-import { useAppStore } from '../store/app-store';
+import { useAppStore } from "../store/app-store";
 
 export const ErrorModal = () => {
   const error = useAppStore((s) => s.error);
@@ -8,7 +8,7 @@ export const ErrorModal = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50"
       onClick={() => setError(null)}
     >
       <div

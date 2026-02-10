@@ -2,7 +2,7 @@
 export const HEIGHTS = {
   BASE_PLATE: 2.0,
 
-  ROAD_SURFACE: 0.0,
+  ROAD_SURFACE: 0.1,
   CROSSING: 0.8,
   SIDEWALK: 2.5,
 
@@ -13,6 +13,6 @@ export const HEIGHTS = {
 
   FEATURE_SLOT_DEPTH: 2.0,
   FEATURE_PIECE: 4.0,
-  ORIENTATION_MARKER: 5.0,
+  ORIENTATION_MARKER: 5.5,
   BUILDING: 3.0,
 } as const;

@@ -24,6 +24,25 @@ export const latLngToLocal = (
 };
 
 /**
+ * Convert local mm coordinates back to lat/lng.
+ */
+export const localToLatLng = (
+  point: LocalPoint,
+  centerLat: number,
+  centerLng: number,
+  scaleFactor: number,
+): [number, number] => {
+  const metersPerDegreeLng =
+    METRES_PER_DEGREE * Math.cos((centerLat * Math.PI) / 180);
+  const xMeters = point.x / scaleFactor;
+  const yMeters = point.y / scaleFactor;
+  return [
+    centerLat + yMeters / METRES_PER_DEGREE,
+    centerLng + xMeters / metersPerDegreeLng,
+  ];
+};
+
+/**
  * Compute a scale factor to fit the given radius (in meters) onto a plate of given size.
  * The diameter (2 * radius) maps to the plate width.
  */

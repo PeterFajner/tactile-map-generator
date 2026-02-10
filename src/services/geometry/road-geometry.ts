@@ -1,46 +1,90 @@
 import * as THREE from "three";
 import { HEIGHTS } from "../../constants/heights";
-import type { Road } from "../../types/map-data";
+import type { LocalPoint, Road } from "../../types/map-data";
 import { bufferPolyline, triangulatePolygon } from "./buffer-utils";
+import { clipPolygonToRect, ensureCCW } from "./clip-utils";
+
+export type ClipBounds = {
+  xMin: number;
+  yMin: number;
+  xMax: number;
+  yMax: number;
+};
 
 /**
  * Generate a 3D mesh geometry for a road.
- * Roads sit at the base level (lowest feature).
+ * If clipBounds is provided, the buffered polygon is clipped to plate bounds.
  */
 export const generateRoadGeometry = (
   road: Road,
+  clipBounds?: ClipBounds,
 ): THREE.BufferGeometry | null => {
   if (road.points.length < 2) return null;
 
-  const polygon = bufferPolyline(road.points, road.widthMm);
+  let polygon: LocalPoint[] = bufferPolyline(road.points, road.widthMm);
   if (polygon.length < 3) return null;
 
-  return extrudePolygon(polygon, HEIGHTS.BASE_PLATE);
+  if (clipBounds) {
+    polygon = clipPolygonToRect(
+      polygon,
+      clipBounds.xMin,
+      clipBounds.yMin,
+      clipBounds.xMax,
+      clipBounds.yMax,
+    );
+    if (polygon.length < 3) return null;
+  }
+
+  return extrudePolygon(polygon, HEIGHTS.ROAD_SURFACE, HEIGHTS.BASE_PLATE);
 };
 
 /**
  * Extrude a 2D polygon to a given height, creating a solid 3D shape.
- * Bottom face at Z=0, top face at Z=height.
+ * Bottom face at Z=zBase, top face at Z=zBase+height.
  */
 export const extrudePolygon = (
-  polygon: { x: number; y: number }[],
+  inputPolygon: { x: number; y: number }[],
   height: number,
+  zBase: number = 0,
 ): THREE.BufferGeometry => {
+  // remove consecutive duplicate vertices (OSM closed ways repeat first/last)
+  const deduped = ensureCCW(inputPolygon).filter(
+    (p, i, arr) =>
+      i === 0 ||
+      Math.abs(p.x - arr[i - 1].x) > 1e-6 ||
+      Math.abs(p.y - arr[i - 1].y) > 1e-6,
+  );
+  // also check if last point duplicates first
+  const polygon =
+    deduped.length > 1 &&
+    Math.abs(deduped[0].x - deduped[deduped.length - 1].x) < 1e-6 &&
+    Math.abs(deduped[0].y - deduped[deduped.length - 1].y) < 1e-6
+      ? deduped.slice(0, -1)
+      : deduped;
+
   const n = polygon.length;
+  if (n < 3) {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute([], 3));
+    return geometry;
+  }
   const indices = triangulatePolygon(polygon);
 
   const vertices: number[] = [];
   const normals: number[] = [];
   const triIndices: number[] = [];
 
-  // bottom face vertices (z=0)
+  const zBottom = zBase;
+  const zTop = zBase + height;
+
+  // bottom face vertices
   for (const p of polygon) {
-    vertices.push(p.x, p.y, 0);
+    vertices.push(p.x, p.y, zBottom);
     normals.push(0, 0, -1);
   }
-  // top face vertices (z=height)
+  // top face vertices
   for (const p of polygon) {
-    vertices.push(p.x, p.y, height);
+    vertices.push(p.x, p.y, zTop);
     normals.push(0, 0, 1);
   }
 
@@ -71,13 +115,13 @@ export const extrudePolygon = (
     const vi = baseIdx + i * 4;
 
     // 4 vertices for this side quad
-    vertices.push(p0.x, p0.y, 0);
+    vertices.push(p0.x, p0.y, zBottom);
     normals.push(nx, ny, 0);
-    vertices.push(p1.x, p1.y, 0);
+    vertices.push(p1.x, p1.y, zBottom);
     normals.push(nx, ny, 0);
-    vertices.push(p1.x, p1.y, height);
+    vertices.push(p1.x, p1.y, zTop);
     normals.push(nx, ny, 0);
-    vertices.push(p0.x, p0.y, height);
+    vertices.push(p0.x, p0.y, zTop);
     normals.push(nx, ny, 0);
 
     triIndices.push(vi, vi + 1, vi + 2);

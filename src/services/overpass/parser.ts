@@ -30,6 +30,59 @@ import {
 const PLATE_WIDTH_MM = 150;
 const PLATE_HEIGHT_MM = 150;
 
+/**
+ * Offset a polyline to the left (positive) or right (negative) by a distance.
+ * Used to synthesize sidewalk geometry from road centerlines.
+ */
+const offsetPolyline = (points: LocalPoint[], offset: number): LocalPoint[] => {
+  if (points.length < 2) return [];
+  const result: LocalPoint[] = [];
+
+  for (let i = 0; i < points.length; i++) {
+    let nx = 0;
+    let ny = 0;
+    let count = 0;
+
+    if (i > 0) {
+      const dx = points[i].x - points[i - 1].x;
+      const dy = points[i].y - points[i - 1].y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      if (len > 1e-10) {
+        nx += -dy / len;
+        ny += dx / len;
+        count++;
+      }
+    }
+    if (i < points.length - 1) {
+      const dx = points[i + 1].x - points[i].x;
+      const dy = points[i + 1].y - points[i].y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      if (len > 1e-10) {
+        nx += -dy / len;
+        ny += dx / len;
+        count++;
+      }
+    }
+
+    if (count > 0) {
+      nx /= count;
+      ny /= count;
+      const nlen = Math.sqrt(nx * nx + ny * ny);
+      if (nlen > 1e-10) {
+        nx /= nlen;
+        ny /= nlen;
+      }
+    }
+
+    result.push({
+      x: points[i].x + nx * offset,
+      y: points[i].y + ny * offset,
+    });
+  }
+
+  return result;
+};
+
 const ROAD_HIGHWAY_TYPES = new Set([
   "motorway",
   "trunk",
@@ -97,16 +150,49 @@ export const parseOverpassResponse = (
             parseFloat(tags.width ?? "") ||
             DEFAULT_ROAD_WIDTHS_M[tags.highway] ||
             6.0;
+          const widthMm = widthM * scaleFactor;
           roads.push({
             id: `way/${way.id}`,
             name: tags.name ?? null,
             highwayType: tags.highway,
             points,
-            widthMm: widthM * scaleFactor,
+            widthMm,
             lanes: tags.lanes ? parseInt(tags.lanes) : null,
             oneway: tags.oneway === "yes",
             surface: tags.surface ?? null,
           });
+
+          // synthesize sidewalks from road-level sidewalk tags
+          const swTag = tags.sidewalk;
+          if (
+            swTag &&
+            swTag !== "no" &&
+            swTag !== "none" &&
+            swTag !== "separate"
+          ) {
+            const swWidthMm = DEFAULT_SIDEWALK_WIDTH_M * scaleFactor;
+            const offsetDist = widthMm / 2 + swWidthMm / 2;
+
+            const addSynthSidewalk = (side: "left" | "right", dist: number) => {
+              const offsetPts = offsetPolyline(points, dist);
+              if (offsetPts.length >= 2) {
+                sidewalks.push({
+                  id: `way/${way.id}/sidewalk-${side}`,
+                  points: offsetPts,
+                  widthMm: swWidthMm,
+                  side,
+                  surface: null,
+                });
+              }
+            };
+
+            if (swTag === "left" || swTag === "both" || swTag === "yes") {
+              addSynthSidewalk("left", offsetDist);
+            }
+            if (swTag === "right" || swTag === "both" || swTag === "yes") {
+              addSynthSidewalk("right", -offsetDist);
+            }
+          }
         }
       }
 
