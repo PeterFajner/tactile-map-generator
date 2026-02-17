@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { HEIGHTS } from "../../constants/heights";
 import type { Curb, LocalPoint } from "../../types/map-data";
+import { clipPolygonToRect } from "./clip-utils";
+import type { ClipBounds } from "./road-geometry";
 import { extrudePolygon } from "./road-geometry";
 
 /** Curb marker size in mm */
@@ -32,13 +34,22 @@ const pointToSquare = (position: LocalPoint, size: number): LocalPoint[] => {
 /**
  * Generate 3D geometry for a curb marker.
  * Height depends on curb type. Flush curbs (0mm) return null.
+ * Clipped to plate bounds.
  */
 export const generateCurbGeometry = (
   curb: Curb,
+  bounds: ClipBounds,
 ): THREE.BufferGeometry | null => {
   const height = curbTypeToHeight(curb.type);
   if (height <= 0) return null;
 
-  const polygon = pointToSquare(curb.position, CURB_SIZE_MM);
-  return extrudePolygon(polygon, height, HEIGHTS.BASE_PLATE);
+  const clipped = clipPolygonToRect(
+    pointToSquare(curb.position, CURB_SIZE_MM),
+    bounds.xMin,
+    bounds.yMin,
+    bounds.xMax,
+    bounds.yMax,
+  );
+  if (clipped.length < 3) return null;
+  return extrudePolygon(clipped, height, HEIGHTS.BASE_PLATE);
 };

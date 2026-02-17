@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { ErrorModal } from "./components/ErrorModal";
+import { ExportPanel } from "./components/export/ExportPanel";
 import {
   JsonEditor,
   type JsonEditorHandle,
@@ -170,8 +171,8 @@ const ExportStep = () => {
 
   return (
     <div className="flex flex-col h-full p-4 gap-4">
-      <div className="flex-1 flex items-center justify-center bg-gray-100 rounded border border-gray-300">
-        <p className="text-gray-500">3MF Export coming soon...</p>
+      <div className="flex-1 overflow-auto">
+        <ExportPanel />
       </div>
       <div className="flex items-center gap-3">
         <button

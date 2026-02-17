@@ -290,7 +290,10 @@ export const assembleScene = (mapData: TactileMapData): AssembledScene => {
       "buildings",
       collectGeometries(clipped.buildings, generateBuildingGeometry),
     ),
-    buildLayer("curbs", collectGeometries(clipped.curbs, generateCurbGeometry)),
+    buildLayer(
+      "curbs",
+      collectGeometries(clipped.curbs, (c) => generateCurbGeometry(c, bounds)),
+    ),
     buildLayer(
       "bikeLanes",
       collectGeometries(clipped.bikeLanes, (bl) =>
@@ -305,15 +308,21 @@ export const assembleScene = (mapData: TactileMapData): AssembledScene => {
     ]),
     buildLayer(
       "trafficSignals",
-      collectGeometries(clipped.trafficSignals, generateTrafficSignalGeometry),
+      collectGeometries(clipped.trafficSignals, (s) =>
+        generateTrafficSignalGeometry(s, bounds),
+      ),
     ),
     buildLayer(
       "busStops",
-      collectGeometries(clipped.busStops, generateBusStopGeometry),
+      collectGeometries(clipped.busStops, (b) =>
+        generateBusStopGeometry(b, bounds),
+      ),
     ),
     buildLayer(
       "featureSlots",
-      collectGeometries(clipped.featureSlots, generateFeatureSlotGeometry),
+      collectGeometries(clipped.featureSlots, (f) =>
+        generateFeatureSlotGeometry(f, bounds),
+      ),
     ),
   ];
 

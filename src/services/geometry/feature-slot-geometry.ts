@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { HEIGHTS } from "../../constants/heights";
 import type { FeatureSlot, LocalPoint } from "../../types/map-data";
+import { clipPolygonToRect } from "./clip-utils";
+import type { ClipBounds } from "./road-geometry";
 import { extrudePolygon } from "./road-geometry";
 
 /**
@@ -29,17 +31,24 @@ const slotToPolygon = (slot: FeatureSlot): LocalPoint[] => {
 /**
  * Generate 3D geometry for a feature slot.
  * Rendered as a thin indicator slab at the base plate surface.
- * In 3MF export (Phase 6), these become boolean subtractions.
+ * Clipped to plate bounds.
  */
 export const generateFeatureSlotGeometry = (
   slot: FeatureSlot,
+  bounds: ClipBounds,
 ): THREE.BufferGeometry | null => {
-  const polygon = slotToPolygon(slot);
-  if (polygon.length < 3) return null;
+  const clipped = clipPolygonToRect(
+    slotToPolygon(slot),
+    bounds.xMin,
+    bounds.yMin,
+    bounds.xMax,
+    bounds.yMax,
+  );
+  if (clipped.length < 3) return null;
 
   const slotIndicatorHeight = 0.2;
   return extrudePolygon(
-    polygon,
+    clipped,
     slotIndicatorHeight,
     HEIGHTS.BASE_PLATE - slotIndicatorHeight,
   );

@@ -24,7 +24,7 @@ const ClickHandler = () => {
       setSelection({
         lat: e.latlng.lat,
         lng: e.latlng.lng,
-        radius: selection?.radius ?? 150,
+        radius: selection?.radius ?? 50,
       });
     },
   });
@@ -61,7 +61,7 @@ export const MapPicker = () => {
 
   const handleSearchSelect = useCallback(
     (lat: number, lng: number) => {
-      setSelection({ lat, lng, radius: selection?.radius ?? 150 });
+      setSelection({ lat, lng, radius: selection?.radius ?? 50 });
     },
     [setSelection, selection?.radius],
   );
@@ -69,7 +69,7 @@ export const MapPicker = () => {
   return (
     <div className="flex flex-col gap-3 h-full">
       <LocationSearchBar onSelect={handleSearchSelect} />
-      <RadiusControl radius={selection?.radius ?? 150} onChange={setRadius} />
+      <RadiusControl radius={selection?.radius ?? 50} onChange={setRadius} />
       <div className="flex-1 rounded overflow-hidden border border-gray-300 min-h-[400px]">
         <MapContainer
           center={[44.648, -63.575]} // Halifax
@@ -111,7 +111,7 @@ export const MapPicker = () => {
       {selection && (
         <div className="text-sm text-gray-600">
           Selected: {selection.lat.toFixed(5)}, {selection.lng.toFixed(5)} |
-          Radius: {selection.radius}m
+          Area: {selection.radius * 2} × {selection.radius * 2} m
         </div>
       )}
     </div>

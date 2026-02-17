@@ -13,6 +13,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@tailwindcss/vite": "^4.1.18",
+    "earcut": "^3.0.2",
     "jszip": "^3.10.1",
     "leaflet": "^1.9.4",
     "react": "^19.2.4",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/earcut": "^3.0.0",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",

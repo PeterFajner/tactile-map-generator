@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { HEIGHTS } from "../../constants/heights";
 import type { BusStop, LocalPoint, TrafficSignal } from "../../types/map-data";
+import { clipPolygonToRect } from "./clip-utils";
+import type { ClipBounds } from "./road-geometry";
 import { extrudePolygon } from "./road-geometry";
 
 /** Marker size for traffic signals (mm) */
@@ -26,14 +28,34 @@ const pointToOctagon = (position: LocalPoint, size: number): LocalPoint[] => {
   return pts;
 };
 
+/** Clip a polygon to plate bounds, returning null if nothing remains. */
+const clipToPlate = (
+  polygon: LocalPoint[],
+  bounds: ClipBounds,
+): LocalPoint[] | null => {
+  const clipped = clipPolygonToRect(
+    polygon,
+    bounds.xMin,
+    bounds.yMin,
+    bounds.xMax,
+    bounds.yMax,
+  );
+  return clipped.length >= 3 ? clipped : null;
+};
+
 /**
  * Generate 3D geometry for a traffic signal marker.
  * A small raised octagonal column on top of the base plate.
  */
 export const generateTrafficSignalGeometry = (
   signal: TrafficSignal,
+  bounds: ClipBounds,
 ): THREE.BufferGeometry | null => {
-  const polygon = pointToOctagon(signal.position, SIGNAL_SIZE_MM);
+  const polygon = clipToPlate(
+    pointToOctagon(signal.position, SIGNAL_SIZE_MM),
+    bounds,
+  );
+  if (!polygon) return null;
   return extrudePolygon(polygon, POINT_MARKER_HEIGHT_MM, HEIGHTS.BASE_PLATE);
 };
 
@@ -43,7 +65,12 @@ export const generateTrafficSignalGeometry = (
  */
 export const generateBusStopGeometry = (
   busStop: BusStop,
+  bounds: ClipBounds,
 ): THREE.BufferGeometry | null => {
-  const polygon = pointToOctagon(busStop.position, BUS_STOP_SIZE_MM);
+  const polygon = clipToPlate(
+    pointToOctagon(busStop.position, BUS_STOP_SIZE_MM),
+    bounds,
+  );
+  if (!polygon) return null;
   return extrudePolygon(polygon, POINT_MARKER_HEIGHT_MM, HEIGHTS.BASE_PLATE);
 };
