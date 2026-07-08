@@ -22,8 +22,12 @@ import {
   generateBusStopGeometry,
   generateTrafficSignalGeometry,
 } from "./point-markers";
+import { subtractGeometries } from "./csg-utils";
 import type { ClipBounds } from "./road-geometry";
-import { generateRoadGeometry } from "./road-geometry";
+import {
+  generateRoadCutterGeometry,
+  generateRoadFloorGeometry,
+} from "./road-geometry";
 import { generateSidewalkGeometry } from "./sidewalk-geometry";
 
 /** Default colors for each layer (designed for visual distinction in preview) */
@@ -266,14 +270,24 @@ export const assembleScene = (mapData: TactileMapData): AssembledScene => {
     yMax: metadata.plateHeightMm / 2,
   };
 
+  // Generate road cutter volumes and subtract them from the base plate
+  const roadCutters = collectGeometries(clipped.roads, (r) =>
+    generateRoadCutterGeometry(r, bounds),
+  );
+  const basePlateGeo = generateBasePlateGeometry(
+    metadata.plateWidthMm,
+    metadata.plateHeightMm,
+  );
+  const carvedPlate = subtractGeometries(basePlateGeo, roadCutters);
+
+  // Road floors are thin slabs sitting at the bottom of the carved channels
+  const roadFloors = collectGeometries(clipped.roads, (r) =>
+    generateRoadFloorGeometry(r, bounds),
+  );
+
   const layers: GeometryLayer[] = [
-    buildLayer("basePlate", [
-      generateBasePlateGeometry(metadata.plateWidthMm, metadata.plateHeightMm),
-    ]),
-    buildLayer(
-      "roads",
-      collectGeometries(clipped.roads, (r) => generateRoadGeometry(r, bounds)),
-    ),
+    buildLayer("basePlate", [carvedPlate]),
+    buildLayer("roads", roadFloors),
     buildLayer(
       "sidewalks",
       collectGeometries(clipped.sidewalks, (s) =>

@@ -12,13 +12,12 @@ export type ClipBounds = {
 };
 
 /**
- * Generate a 3D mesh geometry for a road.
- * If clipBounds is provided, the buffered polygon is clipped to plate bounds.
+ * Buffer and clip a road to get its 2D polygon footprint.
  */
-export const generateRoadGeometry = (
+const getRoadPolygon = (
   road: Road,
   clipBounds?: ClipBounds,
-): THREE.BufferGeometry | null => {
+): LocalPoint[] | null => {
   if (road.points.length < 2) return null;
 
   let polygon: LocalPoint[] = bufferPolyline(road.points, road.widthMm);
@@ -34,6 +33,52 @@ export const generateRoadGeometry = (
     );
     if (polygon.length < 3) return null;
   }
+
+  return polygon;
+};
+
+/**
+ * Generate a cutter volume for CSG subtraction from the base plate.
+ * Spans the full plate height so the boolean cleanly removes material.
+ */
+export const generateRoadCutterGeometry = (
+  road: Road,
+  clipBounds?: ClipBounds,
+): THREE.BufferGeometry | null => {
+  const polygon = getRoadPolygon(road, clipBounds);
+  if (!polygon) return null;
+
+  // Cutter spans from z=0 (plate bottom) to z=BASE_PLATE (plate top)
+  return extrudePolygon(polygon, HEIGHTS.BASE_PLATE, 0);
+};
+
+/**
+ * Generate the visible road floor — a thin slab at the inset depth.
+ * Sits at the bottom of the carved channel.
+ */
+export const generateRoadFloorGeometry = (
+  road: Road,
+  clipBounds?: ClipBounds,
+): THREE.BufferGeometry | null => {
+  const polygon = getRoadPolygon(road, clipBounds);
+  if (!polygon) return null;
+
+  // Floor spans from z=0 to z=(BASE_PLATE + ROAD_SURFACE)
+  // With BASE_PLATE=0.8, ROAD_SURFACE=-0.4, floor top is at 0.4mm
+  const floorHeight = HEIGHTS.BASE_PLATE + HEIGHTS.ROAD_SURFACE;
+  return extrudePolygon(polygon, floorHeight, 0);
+};
+
+/**
+ * Generate a 3D mesh geometry for a road (legacy — used when CSG is not needed).
+ * If clipBounds is provided, the buffered polygon is clipped to plate bounds.
+ */
+export const generateRoadGeometry = (
+  road: Road,
+  clipBounds?: ClipBounds,
+): THREE.BufferGeometry | null => {
+  const polygon = getRoadPolygon(road, clipBounds);
+  if (!polygon) return null;
 
   return extrudePolygon(polygon, HEIGHTS.ROAD_SURFACE, HEIGHTS.BASE_PLATE);
 };

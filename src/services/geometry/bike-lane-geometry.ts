@@ -30,9 +30,9 @@ export const generateBikeLaneGeometry = (
     if (polygon.length < 3) return null;
   }
 
-  return extrudePolygon(
-    polygon,
-    HEIGHTS.ROAD_SURFACE,
-    HEIGHTS.BASE_PLATE + HEIGHTS.ROAD_SURFACE,
-  );
+  // Bike lanes sit on the road floor (inset channel).
+  // Road floor top is at BASE_PLATE + ROAD_SURFACE.
+  // Give them a thin raised profile like crossing lines.
+  const roadFloorTop = HEIGHTS.BASE_PLATE + HEIGHTS.ROAD_SURFACE;
+  return extrudePolygon(polygon, HEIGHTS.CROSSING, roadFloorTop);
 };

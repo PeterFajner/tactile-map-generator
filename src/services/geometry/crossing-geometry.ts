@@ -31,5 +31,7 @@ export const generateCrossingGeometry = (
     if (polygon.length < 3) return null;
   }
 
-  return extrudePolygon(polygon, HEIGHTS.CROSSING, HEIGHTS.BASE_PLATE);
+  // Crossings sit on the road floor (inside the inset channel)
+  const roadFloorTop = HEIGHTS.BASE_PLATE + HEIGHTS.ROAD_SURFACE;
+  return extrudePolygon(polygon, HEIGHTS.CROSSING, roadFloorTop);
 };
