@@ -1,4 +1,4 @@
-import type { AppStep } from "../../store/app-store";
+import { type AppStep, useAppStore } from "../../store/app-store";
 
 const STEPS: { key: AppStep; label: string }[] = [
   { key: "select", label: "1. Select Location" },
@@ -13,6 +13,7 @@ const stepOrder: AppStep[] = ["select", "edit", "preview", "export"];
  * Simple component to display the current generation step we're on in a nice way
  */
 export const StepIndicator = ({ current }: { current: AppStep }) => {
+  const setStep = useAppStore((s) => s.setStep);
   const currentStepIndex = stepOrder.indexOf(current);
 
   return (
@@ -21,18 +22,22 @@ export const StepIndicator = ({ current }: { current: AppStep }) => {
         const isActive = s.key === current;
         const isPast = i < currentStepIndex;
         return (
-          <div
+          <button
             key={s.key}
+            type="button"
+            onClick={() => setStep(s.key)}
+            disabled={!isPast}
+            aria-current={isActive ? "step" : undefined}
             className={`px-3 py-1 rounded text-sm font-medium ${
               isActive
                 ? "bg-blue-600 text-white"
                 : isPast
-                  ? "bg-blue-100 text-blue-800"
-                  : "bg-gray-200 text-gray-500"
+                  ? "bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer"
+                  : "bg-gray-200 text-gray-500 cursor-default"
             }`}
           >
             {s.label}
-          </div>
+          </button>
         );
       })}
     </nav>

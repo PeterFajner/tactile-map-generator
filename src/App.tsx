@@ -44,6 +44,9 @@ const SelectStep = () => {
 
   return (
     <div className="flex flex-col h-full p-4 gap-4">
+      <h2 className="text-lg font-semibold text-gray-800">
+        Select area to print
+      </h2>
       <div className="flex-1">
         <MapPicker />
       </div>
@@ -53,7 +56,7 @@ const SelectStep = () => {
           disabled={!selection || isLoading}
           className="px-6 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? "Fetching..." : "Fetch Data"}
+          {isLoading ? "Fetching..." : "Next"}
         </button>
       </div>
     </div>
@@ -133,7 +136,7 @@ const EditStep = () => {
           onClick={handlePreview}
           className="px-6 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700"
         >
-          Preview 3D
+          Next
         </button>
       </div>
     </div>
@@ -159,7 +162,7 @@ const PreviewStep = () => {
           onClick={() => setStep("export")}
           className="px-6 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700"
         >
-          Export
+          Next
         </button>
       </div>
     </div>
